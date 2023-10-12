@@ -283,6 +283,50 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
     // Use: Instead of passing the triangle's color directly to the frame buffer, pass the color to the shaders first to get the final color;
     // Use: auto pixel_color = fragment_shader(payload);
 
+
+
+
+    int minX = floor(min(t.v[0].x,min(t.v[1].x,t.v[2].x)));
+    int maxX = ceil(max(t.v[0].x,max(t.v[1].x,t.v[2].x)));
+    int minY = floor(max(t.v[0].y,max(t.v[1].y,t.v[2].y)));
+    int maxY = ceil(max(t.v[0].y,max(t.v[1].y,t.v[2].y)));
+
+
+    for (size_t x = minX; x <= maxX; x++)
+    {
+        for (size_t y = 0; y <= count; i++)
+        {
+           if (insideTriangle(x,y,t.v))
+           {
+                
+                
+                //重心坐标
+                auto[alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
+
+
+                // auto interpolated_color
+                auto color = alpha*t.color[0]+beta*t.color[1]+gamma*t.color[2];
+
+
+                // auto interpolated_normal
+                auto normal = alpha*t.normal[0]+beta*t.normal[1]+gamma*t.normal[2];
+
+                // auto interpolated_texcoords
+                auto tex_coords = alpha*t.tex_coords[0]+beta*t.tex_coords[1]+gamma*t.tex_coords[2];
+
+                // auto interpolated_shadingcoords
+                auto interpolated_shadingcoords = alpha * view_pos[0] + beta * view_pos[1] + gamma * view_pos[2];
+
+
+                //TODO:光栅化
+   
+           }
+           
+        }
+        
+    }
+    
+
  
 }
 
