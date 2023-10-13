@@ -47,6 +47,9 @@ Eigen::Matrix4f get_model_matrix(float angle)
     return translate * rotation * scale;
 }
 
+
+
+//投影矩阵
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar)
 {
     // TODO: Use the same projection matrix from the previous assignments
@@ -127,8 +130,13 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
 
 Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
 {
+    //ka:环境光系数 a:ambient coefficient 
     Eigen::Vector3f ka = Eigen::Vector3f(0.005, 0.005, 0.005);
+
+    //kd:漫反射系数  d：diffuse  coefficient
     Eigen::Vector3f kd = payload.color;
+    
+    //ks:高光反射系数  s: specular coefficient
     Eigen::Vector3f ks = Eigen::Vector3f(0.7937, 0.7937, 0.7937);
 
     auto l1 = light{{20, 20, 20}, {500, 500, 500}};
@@ -267,6 +275,7 @@ int main(int argc, const char** argv)
             Triangle* t = new Triangle();
             for(int j=0;j<3;j++)
             {
+                //顶点位置 :Vector4f w默认是1
                 t->setVertex(j,Vector4f(mesh.Vertices[i+j].Position.X,mesh.Vertices[i+j].Position.Y,mesh.Vertices[i+j].Position.Z,1.0));
                 t->setNormal(j,Vector3f(mesh.Vertices[i+j].Normal.X,mesh.Vertices[i+j].Normal.Y,mesh.Vertices[i+j].Normal.Z));
                 t->setTexCoord(j,Vector2f(mesh.Vertices[i+j].TextureCoordinate.X, mesh.Vertices[i+j].TextureCoordinate.Y));

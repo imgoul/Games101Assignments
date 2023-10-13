@@ -184,20 +184,28 @@ void rst::rasterizer::draw(std::vector<Triangle *> &TriangleList)
     {
         Triangle newtri = *t;
 
+        // 定义数组mm 元素类型：Vector4f 数组大小：3
         std::array<Eigen::Vector4f, 3> mm{
             (view * model * t->v[0]),
             (view * model * t->v[1]),
             (view * model * t->v[2])};
 
+        // 定义数组viewspace_pos 元素类型：Vector3f 数组大小：3
         std::array<Eigen::Vector3f, 3> viewspace_pos;
 
+
+        // 将mm中的元素从Vector4f 转变成 Vector3(取Vector4f的前三个)
+        //这里有个语法tip:当模板名被认为是类成员或基类时，"<"被解析为小于运算符
+        //所以要使用template关键字
         std::transform(mm.begin(), mm.end(), viewspace_pos.begin(), [](auto &v)
                        { return v.template head<3>(); });
 
+             
         Eigen::Vector4f v[] = {
             mvp * t->v[0],
             mvp * t->v[1],
             mvp * t->v[2]};
+
         // Homogeneous division
         for (auto &vec : v)
         {
@@ -294,10 +302,10 @@ void rst::rasterizer::rasterize_triangle(const Triangle &t, const std::array<Eig
             {
 
                 auto v = t.v;
-                
+
                 // 重心坐标
                 auto [alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
-                
+
                 float Z = 1.0 / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
                 float zp = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
                 zp *= Z;
