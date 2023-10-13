@@ -281,21 +281,23 @@ void rst::rasterizer::rasterize_triangle(const Triangle &t, const std::array<Eig
     // Use: Instead of passing the triangle's color directly to the frame buffer, pass the color to the shaders first to get the final color;
     // Use: auto pixel_color = fragment_shader(payload);
 
-    int minX = floor(std::min<float>(t.v[0][0], std::min<float>(t.v[1][0], t.v[2][0])));
-    int maxX = ceil(std::max<float>(t.v[0][0], std::max<float>(t.v[1][0], t.v[2][0])));
-    int minY = floor(std::max<float>(t.v[0][1], std::max<float>(t.v[1][1], t.v[2][1])));
-    int maxY = ceil(std::max<float>(t.v[0][1], std::max<float>(t.v[1][1], t.v[2][1])));
+    int minX = min<float>(t.v[0][0], min<float>(t.v[1][0], t.v[2][0]));
+    int maxX = max<float>(t.v[0][0], max<float>(t.v[1][0], t.v[2][0]));
+    int minY = max<float>(t.v[0][1], max<float>(t.v[1][1], t.v[2][1]));
+    int maxY = max<float>(t.v[0][1], max<float>(t.v[1][1], t.v[2][1]));
 
-    for (size_t x = minX; x <= maxX; x++)
+    for (size_t x = minX - 20; x <= maxX + 20; x++)
     {
-        for (size_t y = minY; y <= maxY; y++)
+        for (size_t y = minY - 20; y <= maxY + 20; y++)
         {
             if (insideTriangle(x, y, t.v))
             {
 
-                // 重心坐标
                 auto v = t.v;
+                
+                // 重心坐标
                 auto [alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
+                
                 float Z = 1.0 / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
                 float zp = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
                 zp *= Z;
@@ -318,11 +320,11 @@ void rst::rasterizer::rasterize_triangle(const Triangle &t, const std::array<Eig
                     auto interpolated_shadingcoords = alpha * view_pos[0] + beta * view_pos[1] + gamma * view_pos[2];
 
                     // 光栅化
-                    fragment_shader_payload fShader(color,normal,tex_coords,t.tex);
+                    fragment_shader_payload fShader(color, normal.normalized(), tex_coords, t.tex);
                     fShader.view_pos = interpolated_shadingcoords;
 
                     auto targetColor = fragment_shader(fShader);
-                    Eigen::Vector2i point = Eigen::Vector2i(x,y);
+                    Eigen::Vector2i point = Eigen::Vector2i(x, y);
                     set_pixel(point, targetColor);
                 }
             }
