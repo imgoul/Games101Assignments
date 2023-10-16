@@ -8,6 +8,8 @@
 #include "Texture.hpp"
 #include "OBJ_Loader.h"
 
+
+//这个矩阵没有改变旋转，说明摄像机和世界坐标使用同一种坐标系
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 {
     Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
@@ -23,6 +25,9 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
     return view;
 }
 
+
+//M矩阵：模型坐标转换到世界坐标
+//obj 文件使用右手坐标系  
 Eigen::Matrix4f get_model_matrix(float angle)
 {
     Eigen::Matrix4f rotation;
@@ -52,7 +57,7 @@ Eigen::Matrix4f get_model_matrix(float angle)
 //投影矩阵
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar)
 {
-    // TODO: Use the same projection matrix from the previous assignments
+    //  Use the same projection matrix from the previous assignments
 
     Eigen::Matrix4f projection;
     float radian = eye_fov / 2 / 180 * acos(-1);
@@ -82,9 +87,13 @@ static Eigen::Vector3f reflect(const Eigen::Vector3f& vec, const Eigen::Vector3f
     return (2 * costheta * axis - vec).normalized();
 }
 
+
 struct light
 {
+    //位置
     Eigen::Vector3f position;
+    
+    //强度
     Eigen::Vector3f intensity;
 };
 
@@ -128,6 +137,8 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
     return result_color * 255.f;
 }
 
+
+
 Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
 {
     //ka:环境光系数 a:ambient coefficient 
@@ -139,17 +150,24 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
     //ks:高光反射系数  s: specular coefficient
     Eigen::Vector3f ks = Eigen::Vector3f(0.7937, 0.7937, 0.7937);
 
-    auto l1 = light{{20, 20, 20}, {500, 500, 500}};
+    auto l1 = light{    {20, 20, 20},//位置
+                        {500, 500, 500}//强度
+                     };
     auto l2 = light{{-20, 20, 0}, {500, 500, 500}};
 
     std::vector<light> lights = {l1, l2};
+
+
+    //环境光强度
     Eigen::Vector3f amb_light_intensity{10, 10, 10};
+    
+    
     Eigen::Vector3f eye_pos{0, 0, 10};
 
     float p = 150;
 
     Eigen::Vector3f color = payload.color;
-    Eigen::Vector3f point = payload.view_pos;
+    Eigen::Vector3f point = payload.view_pos;//眼睛看到目标点的位置
     Eigen::Vector3f normal = payload.normal;
 
     Eigen::Vector3f result_color = {0, 0, 0};
@@ -157,6 +175,10 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
     {
         // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
         // components are. Then, accumulate that result on the *result_color* object.
+
+
+        //漫反射 
+        //Ld = kd*(I/r*r)*max(0,n·l) 
         
     }
 
@@ -326,6 +348,7 @@ int main(int argc, const char** argv)
         }
     }
 
+    //观察点位置（摄像机位置）
     Eigen::Vector3f eye_pos = {0,0,10};
 
     //设置顶点着色器

@@ -268,8 +268,8 @@ static Eigen::Vector2f interpolate(float alpha, float beta, float gamma, const E
 // Screen space rasterization
 void rst::rasterizer::rasterize_triangle(const Triangle &t, const std::array<Eigen::Vector3f, 3> &view_pos)
 {
-    // TODO: From your HW3, get the triangle rasterization code.
-    // TODO: Inside your rasterization loop:
+    // From your HW3, get the triangle rasterization code.
+    // Inside your rasterization loop:
     //    * v[i].w() is the vertex view space depth value z.
     //    * Z is interpolated view space depth for the current pixel
     //    * zp is depth between zNear and zFar, used for z-buffer
@@ -278,7 +278,7 @@ void rst::rasterizer::rasterize_triangle(const Triangle &t, const std::array<Eig
     // float zp = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
     // zp *= Z;
 
-    // TODO: Interpolate the attributes:
+    // Interpolate the attributes:
     // auto interpolated_color
     // auto interpolated_normal
     // auto interpolated_texcoords

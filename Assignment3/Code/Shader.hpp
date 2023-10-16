@@ -19,9 +19,9 @@ struct fragment_shader_payload
          color(col), normal(nor), tex_coords(tc), texture(tex) {}
 
 
-    Eigen::Vector3f view_pos;
+    Eigen::Vector3f view_pos;//眼睛看到的点的位置
     Eigen::Vector3f color;
-    Eigen::Vector3f normal;
+    Eigen::Vector3f normal;//该点的法线向量
     Eigen::Vector2f tex_coords;
     Texture* texture;
 };
