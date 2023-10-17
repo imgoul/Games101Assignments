@@ -206,7 +206,7 @@ void rst::rasterizer::draw(std::vector<Triangle *> &TriangleList)
             mvp * t->v[1],
             mvp * t->v[2]};
 
-        // Homogeneous division
+        // Homogeneous division  经过齐次除法得到归一化的设备坐标（Normalized Device Coordinates,NDC）
         for (auto &vec : v)
         {
             vec.x() /= vec.w();
@@ -220,12 +220,14 @@ void rst::rasterizer::draw(std::vector<Triangle *> &TriangleList)
             inv_trans * to_vec4(t->normal[1], 0.0f),
             inv_trans * to_vec4(t->normal[2], 0.0f)};
 
-        // Viewport transformation
+        // Viewport transformation 视口变换 NDC坐标转换到屏幕坐标
+        // NDC坐标x,y都是[-1,1];屏幕坐标x范围[0,width],y范围[0,height]
+        // 这个映射过程就是个缩放的过程。
         for (auto &vert : v)
         {
             vert.x() = 0.5 * width * (vert.x() + 1.0);
             vert.y() = 0.5 * height * (vert.y() + 1.0);
-            vert.z() = vert.z() * f1 + f2;
+            vert.z() = vert.z() * f1 + f2; // 这里 z *f1 +f2，可能是为了深度测试的时候比较深度值的大小。 
         }
 
         for (int i = 0; i < 3; ++i)

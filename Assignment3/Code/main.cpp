@@ -8,8 +8,15 @@
 #include "Texture.hpp"
 #include "OBJ_Loader.h"
 
+using namespace std;
 
-//这个矩阵没有改变旋转，说明摄像机和世界坐标使用同一种坐标系
+
+
+// eye_pos：摄像机位置 {0，0，10}
+// 将模型整体向世界坐标-z方向移动10
+// 将模型从世界坐标变换到摄像机坐标，
+//  摄像机坐标和世界坐标一样使用右手坐标系
+//  但是摄像机的 视锥体 朝向-z方向
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 {
     Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
@@ -27,17 +34,25 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 
 
 //M矩阵：模型坐标转换到世界坐标
-//obj 文件使用右手坐标系  
+// "/models/spot/spot_griangulated_good.obj"模型使用的是右手坐标系
+// 此处世界坐标和模型坐标一样使用右手坐标系，世界坐标原点和模型原点重合
+// xyz轴绕y轴旋转140度 得到世界坐标的xyz朝向 
 Eigen::Matrix4f get_model_matrix(float angle)
 {
     Eigen::Matrix4f rotation;
+    cout<<"M矩阵 绕Y轴旋转："<<angle<<"度"<<endl;
+
+    //角度转换成弧度
     angle = angle * MY_PI / 180.f;
+
+    //绕y轴旋angle  
     rotation << cos(angle), 0, sin(angle), 0,
                 0, 1, 0, 0,
                 -sin(angle), 0, cos(angle), 0,
                 0, 0, 0, 1;
 
     Eigen::Matrix4f scale;
+    //放大 2.5倍
     scale << 2.5, 0, 0, 0,
               0, 2.5, 0, 0,
               0, 0, 2.5, 0,
@@ -54,9 +69,15 @@ Eigen::Matrix4f get_model_matrix(float angle)
 
 
 
-//投影矩阵
+//投影矩阵 
+//将坐标从摄像机坐标转换到其次裁剪坐标
+// 在裁剪空间之前，虽然使用了齐次坐标表示点和向量，但第四个分量都是固定的：
+//      点的w分量是1，方向矢量的w分量是0。
+//经过投影矩阵的变换后，顶点的w分量将会具有特殊的意义。用于齐次除法。
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar)
 {
+    //传来的参数 eye_fov:45度  apect_ratio:1  zNear:0.1  zFar:50
+
     //  Use the same projection matrix from the previous assignments
 
     Eigen::Matrix4f projection;
@@ -280,7 +301,9 @@ int main(int argc, const char** argv)
     //三角形个数
     std::vector<Triangle*> TriangleList;
 
+    // 弧度：140
     float angle = 140.0;
+
     bool command_line = false;
 
     std::string filename = "output.png";
@@ -365,6 +388,7 @@ int main(int argc, const char** argv)
         r.clear(rst::Buffers::Color | rst::Buffers::Depth);
         r.set_model(get_model_matrix(angle));
         r.set_view(get_view_matrix(eye_pos));
+
         r.set_projection(get_projection_matrix(45.0, 1, 0.1, 50));
 
         r.draw(TriangleList);
@@ -383,6 +407,7 @@ int main(int argc, const char** argv)
 
         r.set_model(get_model_matrix(angle));
         r.set_view(get_view_matrix(eye_pos));
+
         r.set_projection(get_projection_matrix(45.0, 1, 0.1, 50));
 
         //r.draw(pos_id, ind_id, col_id, rst::Primitive::Triangle);
