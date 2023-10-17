@@ -137,8 +137,8 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
     auto l2 = light{{-20, 20, 0}, {500, 500, 500}};
 
     std::vector<light> lights = {l1, l2};
-    Eigen::Vector3f amb_light_intensity{10, 10, 10};
-    Eigen::Vector3f eye_pos{0, 0, 10};
+    Eigen::Vector3f amb_light_intensity{10, 10, 10}; //环境光强度
+    Eigen::Vector3f eye_pos{0, 0, 10}; //眼睛位置
 
     float p = 150;
 
@@ -152,7 +152,7 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
     {
         // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
         // components are. Then, accumulate that result on the *result_color* object.
-        
+
 
     }
 
@@ -181,9 +181,9 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
 
 
     //环境光强度
-    Eigen::Vector3f amb_light_intensity{10, 10, 10};
+    Eigen::Vector3f amb_light_intensity{10, 10, 10}; 
     
-    
+    //眼睛位置
     Eigen::Vector3f eye_pos{0, 0, 10};
 
     float p = 150;
@@ -201,6 +201,8 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
 
         //漫反射 
         //Ld = kd*(I/r*r)*max(0,n·l) 
+
+        Eigen::Vector3f Ld = kd*
         
     }
 
