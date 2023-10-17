@@ -268,8 +268,10 @@ static Eigen::Vector2f interpolate(float alpha, float beta, float gamma, const E
 }
 
 // Screen space rasterization
+// view_pos:三角形三个顶点在摄像机坐标系下的位置
 void rst::rasterizer::rasterize_triangle(const Triangle &t, const std::array<Eigen::Vector3f, 3> &view_pos)
 {
+
     // From your HW3, get the triangle rasterization code.
     // Inside your rasterization loop:
     //    * v[i].w() is the vertex view space depth value z.
@@ -331,10 +333,13 @@ void rst::rasterizer::rasterize_triangle(const Triangle &t, const std::array<Eig
 
                     // 光栅化
                     fragment_shader_payload fShader(color, normal.normalized(), tex_coords, t.tex);
+
                     fShader.view_pos = interpolated_shadingcoords;
 
                     auto targetColor = fragment_shader(fShader);
+
                     Eigen::Vector2i point = Eigen::Vector2i(x, y);
+                    
                     set_pixel(point, targetColor);
                 }
             }

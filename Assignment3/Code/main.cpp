@@ -152,6 +152,7 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
     {
         // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
         // components are. Then, accumulate that result on the *result_color* object.
+        
 
     }
 
@@ -188,7 +189,7 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
     float p = 150;
 
     Eigen::Vector3f color = payload.color;
-    Eigen::Vector3f point = payload.view_pos;//眼睛看到目标点的位置
+    Eigen::Vector3f point = payload.view_pos;//顶点在摄像机坐标坐标系下的位置
     Eigen::Vector3f normal = payload.normal;
 
     Eigen::Vector3f result_color = {0, 0, 0};
