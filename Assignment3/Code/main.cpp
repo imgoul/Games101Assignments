@@ -12,11 +12,18 @@ using namespace std;
 
 
 
-// eye_pos：摄像机位置 {0，0，10}
-// 将模型整体向世界坐标-z方向移动10
-// 将模型从世界坐标变换到摄像机坐标，
-//  摄像机坐标和世界坐标一样使用右手坐标系
-//  但是摄像机的 视锥体 朝向-z方向
+
+// V矩阵： 世界空间 ->  观察空间
+// eye_pos：摄像机位置 {0，0，10}（在世界空间下的位置）
+//  摄像机坐标和世界坐标一样使用右手坐标系,但是摄像机的 视锥体 朝向-z方向
+//  
+// 两种思考方式：
+//     方式1： 1.计算观察空间的三个坐标轴在世界空间的表示，以及观察空间原点的位置，构建从观察空间变换到世界空间的变换矩阵
+//            2. 对该矩阵求逆得到世界空间到观察空间的变换矩阵V
+//
+//     方式2：1.想象平移整个观察空间，让摄像机原点位于世界坐标的原点，坐标轴与世界空间中的坐标轴重合 
+//           2.这种方法得到的矩阵和方式1得到的矩阵是一样的，即为矩阵V
+//             (这里观察空间位置是{0，0，10}，平移到原点按{0，0，-10}平移)
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 {
     Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
@@ -33,10 +40,11 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 }
 
 
-//M矩阵：模型坐标转换到世界坐标
+//M矩阵：模型空间  ->  世界空间
 // "/models/spot/spot_griangulated_good.obj"模型使用的是右手坐标系
 // 此处世界坐标和模型坐标一样使用右手坐标系，世界坐标原点和模型原点重合
-// xyz轴绕y轴旋转140度 得到世界坐标的xyz朝向 
+// xyz轴绕y轴旋转140度(x'与x相差140度 z'与z相差140度) 得到世界坐标的xyz朝向 
+
 Eigen::Matrix4f get_model_matrix(float angle)
 {
     Eigen::Matrix4f rotation;
@@ -46,34 +54,48 @@ Eigen::Matrix4f get_model_matrix(float angle)
     angle = angle * MY_PI / 180.f;
 
     //绕y轴旋angle  
-    rotation << cos(angle), 0, sin(angle), 0,
-                0, 1, 0, 0,
-                -sin(angle), 0, cos(angle), 0,
-                0, 0, 0, 1;
+    rotation << cos(angle)  , 0, sin(angle), 0,
+                0           , 1, 0         , 0,
+                -sin(angle) , 0, cos(angle), 0,
+                0           , 0, 0         , 1;
 
     Eigen::Matrix4f scale;
     //放大 2.5倍
-    scale << 2.5, 0, 0, 0,
+    scale <<  2.5, 0, 0, 0,
               0, 2.5, 0, 0,
               0, 0, 2.5, 0,
               0, 0, 0, 1;
 
     Eigen::Matrix4f translate;
-    translate << 1, 0, 0, 0,
+    translate << 
+            1, 0, 0, 0,
             0, 1, 0, 0,
             0, 0, 1, 0,
             0, 0, 0, 1;
 
     return translate * rotation * scale;
+
+
+    // M = translate * rotation * scale;
+    // M = 2.5*cos(140度)  ,0    ,2.5*sin(140度) ,0
+    //     0               ,2.5  ,0             ,0,
+    //     -2.5*sin(140度) ,0     ,2.5*cos(140度),0
+    //     0               ,0    ,0             ,1
+    //M去除最后一行的矩阵：前三列分别是模型坐标系的x,y,z基向量在世界坐标系的表示，最后一列是模型坐标系原点在世界坐标系的位置
 }
 
 
 
-//投影矩阵 
-//将坐标从摄像机坐标转换到其次裁剪坐标
+//投影矩阵(裁剪矩阵) 
+//摄像机空间 ->  齐次裁剪空间
 // 在裁剪空间之前，虽然使用了齐次坐标表示点和向量，但第四个分量都是固定的：
 //      点的w分量是1，方向矢量的w分量是0。
 //经过投影矩阵的变换后，顶点的w分量将会具有特殊的意义。用于齐次除法。
+// 齐次裁剪坐标：左手坐标系
+// NDC：左手坐标系
+
+// 观察空间使用右手坐标系，齐次裁剪空间（NDC）使用左手坐标系、右手坐标系，
+// 透视投影矩阵将会有所不同，参考https://zhuanlan.zhihu.com/p/618620569
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar)
 {
     //传来的参数 eye_fov:45度  apect_ratio:1  zNear:0.1  zFar:50
@@ -82,7 +104,8 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float z
 
     Eigen::Matrix4f projection;
     float radian = eye_fov / 2 / 180 * acos(-1);
-    projection << cos(radian) / sin(radian) / aspect_ratio, 0, 0, 0,
+    projection << 
+        cos(radian) / sin(radian) / aspect_ratio, 0, 0, 0,
         0, cos(radian) / sin(radian), 0, 0,
         0, 0, -(zFar + zNear) / (zFar - zNear), -2 * zNear * zFar / (zFar - zNear),
         0, 0, -1, 0;
@@ -202,7 +225,7 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
         //漫反射 
         //Ld = kd*(I/r*r)*max(0,n·l) 
 
-        Eigen::Vector3f Ld = kd*
+        // Eigen::Vector3f Ld = kd*
         
     }
 

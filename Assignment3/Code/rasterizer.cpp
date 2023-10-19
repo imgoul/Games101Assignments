@@ -314,8 +314,13 @@ void rst::rasterizer::rasterize_triangle(const Triangle &t, const std::array<Eig
                 float zp = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
                 zp *= Z;
 
+                //NDC采用左手坐标系，顶点坐标z [-1,1],z越小距离摄像机越近
                 if (zp < depth_buf[get_index(x, y)])
                 {
+
+                    cout << "w:"<<(alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w())<<endl;
+                    cout << "zp:"<<zp<<endl;
+
                     depth_buf[get_index(x, y)] = zp;
                     /* code */
 
@@ -339,7 +344,7 @@ void rst::rasterizer::rasterize_triangle(const Triangle &t, const std::array<Eig
                     auto targetColor = fragment_shader(fShader);
 
                     Eigen::Vector2i point = Eigen::Vector2i(x, y);
-                    
+
                     set_pixel(point, targetColor);
                 }
             }
