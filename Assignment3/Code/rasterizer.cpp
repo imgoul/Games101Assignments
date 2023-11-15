@@ -318,8 +318,8 @@ void rst::rasterizer::rasterize_triangle(const Triangle &t, const std::array<Eig
                 if (zp < depth_buf[get_index(x, y)])
                 {
 
-                    cout << "w:"<<(alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w())<<endl;
-                    cout << "zp:"<<zp<<endl;
+                    // cout << "w:"<<(alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w())<<endl;
+                    // cout << "zp:"<<zp<<endl;
 
                     depth_buf[get_index(x, y)] = zp;
                     /* code */
