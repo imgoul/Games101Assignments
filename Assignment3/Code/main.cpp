@@ -44,7 +44,7 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 Eigen::Matrix4f get_model_matrix(float angle)
 {
     Eigen::Matrix4f rotation;
-    cout << "M矩阵 绕Y轴旋转：" << angle << "度" << endl;
+    // cout << "M矩阵 绕Y轴旋转：" << angle << "度" << endl;
 
     // 角度转换成弧度
     angle = angle * MY_PI / 180.f;
@@ -142,8 +142,9 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload &payload)
 
         // 取纹理坐标的颜色
         auto tex_coord = payload.tex_coords;
-        return_color = payload.texture->getColor(tex_coord.x(), tex_coord.y());
+        return_color = (*payload.texture).getColor(tex_coord.x(), tex_coord.y());
     }
+
     Eigen::Vector3f texture_color;
     texture_color << return_color.x(), return_color.y(), return_color.z();
 
@@ -181,7 +182,7 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload &payload)
         auto lightVect = light.position - point;
         auto eyeVect = eye_pos - point;
         auto h = (lightVect + eyeVect).normalized();
-        Eigen::Vector3f specular = ks.cwiseProduct((light.intensity / (distance * distance))) * pow((0.0f, n.dot(lightDirection)), p);
+        Eigen::Vector3f specular = ks.cwiseProduct((light.intensity / (distance * distance))) * pow((0.0f, n.dot(h)), p);
 
         auto ambient = ka.cwiseProduct(amb_light_intensity);
 
@@ -190,7 +191,6 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload &payload)
     }
 
     return result_color * 255.f;
-
 }
 
 // Blinn-Phong着色模型
@@ -242,7 +242,7 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload &payload)
         auto lightVect = light.position - point;
         auto eyeVect = eye_pos - point;
         auto h = (lightVect + eyeVect).normalized();
-        Eigen::Vector3f specular = ks.cwiseProduct((light.intensity / (distance * distance))) * pow((0.0f, n.dot(lightDirection)), p);
+        Eigen::Vector3f specular = ks.cwiseProduct((light.intensity / (distance * distance))) * pow((0.0f, n.dot(h)), p);
 
         auto ambient = ka.cwiseProduct(amb_light_intensity);
 
@@ -292,11 +292,31 @@ Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload &payl
     {
         // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular*
         // components are. Then, accumulate that result on the *result_color* object.
+
+        // 漫反射
+        // Ld = kd*(I/(r*r))*max(0,n·l)
+        auto distance = (light.position - point).norm();
+        auto lightDirection = (light.position - point).normalized();
+        auto n = normal.normalized();
+        Eigen::Vector3f diffuse = kd.cwiseProduct((light.intensity / (distance * distance))) * max(0.0f, n.dot(lightDirection));
+
+        // 高光反射
+        //  Ls = ks*(I/(r*r))*max(0,n·h)
+        auto lightVect = light.position - point;
+        auto eyeVect = eye_pos - point;
+        auto h = (lightVect + eyeVect).normalized();
+        Eigen::Vector3f specular = ks.cwiseProduct((light.intensity / (distance * distance))) * pow((0.0f, n.dot(h)), p);
+
+        auto ambient = ka.cwiseProduct(amb_light_intensity);
+
+        auto lightEffect = diffuse + specular + ambient;
+        result_color += lightEffect;
     }
 
     return result_color * 255.f;
 }
 
+// 凹凸贴图 计算新的顶点和法线的公式没理解？
 Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload &payload)
 {
 
@@ -328,6 +348,29 @@ Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload &payload)
     // dV = kh * kn * (h(u,v+1/h)-h(u,v))
     // Vector ln = (-dU, -dV, 1)
     // Normal n = normalize(TBN * ln)
+
+    float x = normal.x();
+    float y = normal.y();
+    float z = normal.z();
+
+    Eigen::Vector3f t = Eigen::Vector3f(x * y / sqrt(x * x + z * z), sqrt(x * x + z * z), z * y / sqrt(x * x + z * z));
+    Eigen::Vector3f b = normal.cross(t);
+
+    Eigen::Matrix3f TBN;
+    TBN << t.x(), b.x(), normal.x(),
+        t.y(), b.y(), normal.y(),
+        t.z(), b.z(), normal.z();
+
+    float u = payload.tex_coords.x();
+    float v = payload.tex_coords.y();
+    float w = payload.texture->width;
+    float h = payload.texture->height;
+
+    float dU = kh * kn * (payload.texture->getColor(u + 1 / w, v).norm() - payload.texture->getColor(u, v).norm());
+    float dV = kh * kn * (payload.texture->getColor(u, v + 1 / h).norm() - payload.texture->getColor(u, v).norm());
+
+    Eigen::Vector3f ln = Eigen::Vector3f(-dU,-dV,1);
+    normal = TBN*ln;
 
     Eigen::Vector3f result_color = {0, 0, 0};
     result_color = normal;

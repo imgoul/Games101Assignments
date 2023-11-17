@@ -337,7 +337,7 @@ void rst::rasterizer::rasterize_triangle(const Triangle &t, const std::array<Eig
                     auto interpolated_shadingcoords = alpha * view_pos[0] + beta * view_pos[1] + gamma * view_pos[2];
 
                     // 光栅化
-                    fragment_shader_payload fShader(color, normal.normalized(), tex_coords, t.tex);
+                    fragment_shader_payload fShader(color, normal.normalized(), tex_coords, texture ?(&*texture):nullptr);
 
                     fShader.view_pos = interpolated_shadingcoords;
 
