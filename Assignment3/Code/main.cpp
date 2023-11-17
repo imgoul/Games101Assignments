@@ -286,6 +286,30 @@ Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload &payl
     // Position p = p + kn * n * h(u,v)
     // Normal n = normalize(TBN * ln)
 
+    float x = normal.x();
+    float y = normal.y();
+    float z = normal.z();
+
+    Eigen::Vector3f t = Eigen::Vector3f(x * y / sqrt(x * x + z * z), sqrt(x * x + z * z), z * y / sqrt(x * x + z * z));
+    Eigen::Vector3f b = normal.cross(t);
+
+    Eigen::Matrix3f TBN;
+    TBN << t.x(), b.x(), normal.x(),
+        t.y(), b.y(), normal.y(),
+        t.z(), b.z(), normal.z();
+
+    float u = payload.tex_coords.x();
+    float v = payload.tex_coords.y();
+    float w = payload.texture->width;
+    float h = payload.texture->height;
+
+    float dU = kh * kn * (payload.texture->getColor(u + 1 / w, v).norm() - payload.texture->getColor(u, v).norm());
+    float dV = kh * kn * (payload.texture->getColor(u, v + 1 / h).norm() - payload.texture->getColor(u, v).norm());
+
+    Eigen::Vector3f ln = Eigen::Vector3f(-dU, -dV, 1);
+    point += kn * normal * payload.texture->getColor(u, v).norm();
+    normal = TBN * ln;
+
     Eigen::Vector3f result_color = {0, 0, 0};
 
     for (auto &light : lights)
@@ -369,8 +393,8 @@ Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload &payload)
     float dU = kh * kn * (payload.texture->getColor(u + 1 / w, v).norm() - payload.texture->getColor(u, v).norm());
     float dV = kh * kn * (payload.texture->getColor(u, v + 1 / h).norm() - payload.texture->getColor(u, v).norm());
 
-    Eigen::Vector3f ln = Eigen::Vector3f(-dU,-dV,1);
-    normal = TBN*ln;
+    Eigen::Vector3f ln = Eigen::Vector3f(-dU, -dV, 1);
+    normal = TBN * ln;
 
     Eigen::Vector3f result_color = {0, 0, 0};
     result_color = normal;
