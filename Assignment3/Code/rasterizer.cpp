@@ -224,7 +224,7 @@ void rst::rasterizer::draw(std::vector<Triangle *> &TriangleList)
         // NDC坐标x,y都是[-1,1];屏幕坐标x范围[0,width],y范围[0,height]
         // 这个映射过程就是个缩放的过程。
         for (auto &vert : v)
-        {
+        {   //对顶点实行视口变换，NDC坐标空间变换到屏幕坐标空间中
             vert.x() = 0.5 * width * (vert.x() + 1.0);
             vert.y() = 0.5 * height * (vert.y() + 1.0);
             vert.z() = vert.z() * f1 + f2; // 这里 z *f1 +f2，可能是为了深度测试的时候比较深度值的大小。 
