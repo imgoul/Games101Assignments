@@ -10,7 +10,7 @@
 
 using namespace std;
 
-// V矩阵： 世界空间 ->  观察空间
+// V矩阵： 世界空间 （右手坐标系）->  观察空间 （右手坐标系）
 // eye_pos：摄像机位置 {0，0，10}（在世界空间下的位置）
 //  摄像机坐标和世界坐标一样使用右手坐标系,但是摄像机的 视锥体 朝向-z方向
 //
@@ -36,7 +36,7 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
     return view;
 }
 
-// M矩阵：模型空间  ->  世界空间
+// M矩阵：模型空间（右手坐标系）  ->  世界空间 （右手坐标系）
 //  "/models/spot/spot_griangulated_good.obj"模型使用的是右手坐标系
 //  此处世界坐标和模型坐标一样使用右手坐标系，世界坐标原点和模型原点重合
 //  xyz轴绕y轴旋转140度(x'与x相差140度 z'与z相差140度) 得到世界坐标的xyz朝向
@@ -87,7 +87,7 @@ Eigen::Matrix4f get_model_matrix(float angle)
 //  齐次裁剪坐标：左手坐标系
 //  NDC：左手坐标系
 
-// 观察空间使用右手坐标系，齐次裁剪空间（NDC）使用左手坐标系、右手坐标系，
+// 观察空间使用右手坐标系，当齐次裁剪空间（NDC）使用左手坐标系和使用右手手坐标系时，
 // 透视投影矩阵将会有所不同，参考https://zhuanlan.zhihu.com/p/618620569
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar)
 {
@@ -407,7 +407,7 @@ int main(int argc, const char **argv)
     // 三角形个数
     std::vector<Triangle *> TriangleList;
 
-    // 弧度：140
+    // 角度：140
     float angle = 140.0;
 
     bool command_line = false;
