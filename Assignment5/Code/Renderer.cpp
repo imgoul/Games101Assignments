@@ -7,7 +7,9 @@
 inline float deg2rad(const float &deg)
 { return deg * M_PI/180.0; }
 
+
 // Compute reflection direction
+//计算反射方向 I:入射方向 N：法线方向
 Vector3f reflect(const Vector3f &I, const Vector3f &N)
 {
     return I - 2 * dotProduct(I, N) * N;
@@ -39,6 +41,7 @@ Vector3f refract(const Vector3f &I, const Vector3f &N, const float &ior)
 
 // [comment]
 // Compute Fresnel equation
+// (菲涅尔方程)计算反射率
 //
 // \param I is the incident view direction
 //
@@ -73,7 +76,7 @@ float fresnel(const Vector3f &I, const Vector3f &N, const float &ior)
 
 // [comment]
 // Returns true if the ray intersects an object, false otherwise.
-// （返回光线与物体的交点）
+// （返回光线与物体的交点(距离光源最近的交点)）
 
 // \param orig is the ray origin 
 //（orig:光线的发射位置）
@@ -156,39 +159,70 @@ Vector3f castRay(
 
     Vector3f hitColor = scene.backgroundColor;
     if (auto payload = trace(orig, dir, scene.get_objects()); payload)//这段代码是使用 C++17 的结构化绑定（Structured Bindings）特性来简化代码
-    {
+    {   //光线与场景中的物体有交点
+        
+        //光线与物体的交点
         Vector3f hitPoint = orig + dir * payload->tNear;
+
+        //hitPoint的法线向量
         Vector3f N; // normal
+
+        //hitPoint的纹理坐标
         Vector2f st; // st coordinates
+
+        //插值运算： 赋值给N和st
         payload->hit_obj->getSurfaceProperties(hitPoint, dir, payload->index, payload->uv, N, st);
+
         switch (payload->hit_obj->materialType) {
-            case REFLECTION_AND_REFRACTION://反射+折射
+            case REFLECTION_AND_REFRACTION://物体材质：能反射、能折射
             {  
+                //反射方向
                 Vector3f reflectionDirection = normalize(reflect(dir, N));
+
+                //折射方向
                 Vector3f refractionDirection = normalize(refract(dir, N, payload->hit_obj->ior));
+
+
+                //反射光线原点
                 Vector3f reflectionRayOrig = (dotProduct(reflectionDirection, N) < 0) ?
                                              hitPoint - N * scene.epsilon :
                                              hitPoint + N * scene.epsilon;
+
+                //折射光线原点                             
                 Vector3f refractionRayOrig = (dotProduct(refractionDirection, N) < 0) ?
                                              hitPoint - N * scene.epsilon :
                                              hitPoint + N * scene.epsilon;
+
+                //递归调用得到反射的颜色
                 Vector3f reflectionColor = castRay(reflectionRayOrig, reflectionDirection, scene, depth + 1);
+
+                //递归调用得到折射的颜色
                 Vector3f refractionColor = castRay(refractionRayOrig, refractionDirection, scene, depth + 1);
+
+                //计算发射率
                 float kr = fresnel(dir, N, payload->hit_obj->ior);
+
+                //反射颜色和折射颜色加权
                 hitColor = reflectionColor * kr + refractionColor * (1 - kr);
                 break;
             }
-            case REFLECTION://反射
+            case REFLECTION://物体材质：只能反射
             {
+                //计算反射率
                 float kr = fresnel(dir, N, payload->hit_obj->ior);
+
+                //反射方向
                 Vector3f reflectionDirection = reflect(dir, N);
+                
+                //反射光线原点
                 Vector3f reflectionRayOrig = (dotProduct(reflectionDirection, N) < 0) ?
                                              hitPoint + N * scene.epsilon :
                                              hitPoint - N * scene.epsilon;
+                //递归调用得到反射颜色
                 hitColor = castRay(reflectionRayOrig, reflectionDirection, scene, depth + 1) * kr;
                 break;
             }
-            default://不反射也不折射
+            default://物体材质：不反射也不折射
             {
                 // [comment]
                 // We use the Phong illumation model int the default case. The phong model
