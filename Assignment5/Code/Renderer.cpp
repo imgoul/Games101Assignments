@@ -229,6 +229,8 @@ Vector3f castRay(
                 // is composed of a diffuse and a specular reflection component.
                 // [/comment]
                 Vector3f lightAmt = 0, specularColor = 0;
+
+                //阴影点
                 Vector3f shadowPointOrig = (dotProduct(dir, N) < 0) ?
                                            hitPoint + N * scene.epsilon :
                                            hitPoint - N * scene.epsilon;
@@ -237,18 +239,24 @@ Vector3f castRay(
                 // We also apply the lambert cosine law
                 // [/comment]
                 for (auto& light : scene.get_lights()) {
+                    //光线方向
                     Vector3f lightDir = light->position - hitPoint;
+
                     // square of the distance between hitPoint and the light
                     float lightDistance2 = dotProduct(lightDir, lightDir);
                     lightDir = normalize(lightDir);
+                    
                     float LdotN = std::max(0.f, dotProduct(lightDir, N));
                     // is the point in shadow, and is the nearest occluding object closer to the object than the light itself?
                     auto shadow_res = trace(shadowPointOrig, lightDir, scene.get_objects());
+
+                    //是否在阴影中
                     bool inShadow = shadow_res && (shadow_res->tNear * shadow_res->tNear < lightDistance2);
 
                     lightAmt += inShadow ? 0 : light->intensity * LdotN;
                     Vector3f reflectionDirection = reflect(-lightDir, N);
 
+                    //高光颜色
                     specularColor += powf(std::max(0.f, -dotProduct(reflectionDirection, dir)),
                         payload->hit_obj->specularExponent) * light->intensity;
                 }
