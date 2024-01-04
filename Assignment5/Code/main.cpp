@@ -17,7 +17,7 @@ int main()
 
     auto sph2 = std::make_unique<Sphere>(Vector3f(0.5, -0.5, -8), 1.5);
     sph2->ior = 1.5;
-    sph2->materialType = REFLECTION_AND_REFRACTION;
+    sph2->materialType = REFLECTION_AND_REFRACTION;//能折射也能反射光线的材质
 
     scene.Add(std::move(sph1));
     scene.Add(std::move(sph2));

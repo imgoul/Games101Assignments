@@ -225,7 +225,7 @@ Vector3f castRay(
             hitColor = castRay(reflectionRayOrig, reflectionDirection, scene, depth + 1) * kr;
             break;
         }
-        default: // 物体材质：不反射也不折射
+        default: // 漫反射+高光（Phong illumation模型）
         {
             // [comment]
             // We use the Phong illumation model int the default case. The phong model
@@ -255,9 +255,10 @@ Vector3f castRay(
                 // 是否在阴影中
                 bool inShadow = shadow_res && (shadow_res->tNear * shadow_res->tNear < lightDistance2);
 
+                //环境光
                 lightAmt += inShadow ? 0 : light->intensity * LdotN;
-                Vector3f reflectionDirection = reflect(-lightDir, N);
 
+                Vector3f reflectionDirection = reflect(-lightDir, N);
                 // 高光颜色
                 specularColor += powf(std::max(0.f, -dotProduct(reflectionDirection, dir)),
                                       payload->hit_obj->specularExponent) *
