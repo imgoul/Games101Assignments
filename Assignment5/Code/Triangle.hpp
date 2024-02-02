@@ -79,6 +79,9 @@ public:
         return intersect;
     }
 
+
+    //通过顶点坐标的位置和索引计算三角形的表面属性
+    //
     void getSurfaceProperties(const Vector3f &, const Vector3f &, const uint32_t &index, const Vector2f &uv, Vector3f &N,
                               Vector2f &st) const override
     {

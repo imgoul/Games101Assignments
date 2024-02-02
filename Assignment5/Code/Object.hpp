@@ -8,10 +8,10 @@ class Object
 public:
     Object()
         : materialType(DIFFUSE_AND_GLOSSY)
-        , ior(1.3)
-        , Kd(0.8)
-        , Ks(0.2)
-        , diffuseColor(0.2)
+        , ior(1.3) //折射率默认为1.3
+        , Kd(0.8)  //漫反射系数默认为0.8
+        , Ks(0.2)  //高光反射系数默认为0.2
+        , diffuseColor(0.2) 
         , specularExponent(25)
     {}
 
@@ -29,8 +29,8 @@ public:
 
     // material properties
     MaterialType materialType;
-    float ior;
-    float Kd, Ks;
+    float ior;  //折射率
+    float Kd, Ks; // 漫反射系数、高光反射系数
     Vector3f diffuseColor;
     float specularExponent;
 };

@@ -29,6 +29,10 @@ Vector3f reflect(const Vector3f &I, const Vector3f &N)
 //
 // If the ray is inside, you need to invert the refractive indices and negate the normal N
 // [/comment]
+// 计算返回折射方向
+//        I:入射向量
+//        N:法线向量
+//        ior:折射率
 Vector3f refract(const Vector3f &I, const Vector3f &N, const float &ior)
 {
     float cosi = clamp(-1, 1, dotProduct(I, N));
@@ -113,23 +117,26 @@ float fresnel(const Vector3f &I, const Vector3f &N, const float &ior)
 // \param isShadowRay is it a shadow ray. We can return from the function sooner as soon as we have found a hit.
 // (isShadowRay:是否是shadowRay)
 // [/comment]
+
+// （返回从orig向dir方向发射的射线与场景中物体的交点(距离光源最近的交点)）
 std::optional<hit_payload> trace(
     const Vector3f &orig, const Vector3f &dir,
     const std::vector<std::unique_ptr<Object>> &objects)
 {
-    float tNear = kInfinity;
-    std::optional<hit_payload> payload;
+    float tNear = kInfinity; //最近的交点距离，默认为无穷大
+    std::optional<hit_payload> payload;//御用存储交点信息的可选类型
 
     // 遍历场景中的所有物体，判断光线与物体是否有交点（没有采用加速结构）
     for (const auto &object : objects)
     {
-        float tNearK = kInfinity;
-        uint32_t indexK;
-        Vector2f uvK;
-        // 判断 光线与物体是否有交点
+        float tNearK = kInfinity; //物体与光线的交点距离，默认为无穷大
+        uint32_t indexK; //物体的Triangle数据的索引
+        Vector2f uvK;   // 交点在Triangle中的重心坐标
+        
         if (object->intersect(orig, dir, tNearK, indexK, uvK) && tNearK < tNear)
         {
-            payload.emplace();
+            //找到距离光线最近的交点    
+            payload.emplace();//创建一个新对象
             payload->hit_obj = object.get();
             payload->tNear = tNearK;
             payload->index = indexK;
@@ -157,18 +164,27 @@ std::optional<hit_payload> trace(
 // If the surface is diffuse/glossy we use the Phong illumation model to compute the color
 // at the intersection point.
 // [/comment]
+// 		
+// 使用光线追踪算法计算从原点orig沿着方向dir发出的光线与场景scene的交点，并返回交点处的颜色
 Vector3f castRay(
     const Vector3f &orig, const Vector3f &dir, const Scene &scene,
     int depth)
 {
     if (depth > scene.maxDepth)
     {
+        //scene.maxDepth = 5：只计算光线最大发生5次反射（或折射）产生的光照效果
         return Vector3f(0.0, 0.0, 0.0);
     }
 
+    //光照背景色
     Vector3f hitColor = scene.backgroundColor;
+    
+
     if (auto payload = trace(orig, dir, scene.get_objects()); payload) // 这段代码是使用 C++17 的结构化绑定（Structured Bindings）特性来简化代码
     {                                                                  // 光线与场景中的物体有交点
+        //获得距离光照最近的交点信息:payload
+
+
 
         // 光线与物体的交点
         Vector3f hitPoint = orig + dir * payload->tNear;
@@ -179,7 +195,8 @@ Vector3f castRay(
         // hitPoint的纹理坐标
         Vector2f st; // st coordinates
 
-        // 插值运算： 赋值给N和st
+        // 通过交点信息、光照信息计算出
+        //      交点的法线向量N和纹理坐标st
         payload->hit_obj->getSurfaceProperties(hitPoint, dir, payload->index, payload->uv, N, st);
 
         switch (payload->hit_obj->materialType)
@@ -192,7 +209,14 @@ Vector3f castRay(
             // 折射方向
             Vector3f refractionDirection = normalize(refract(dir, N, payload->hit_obj->ior));
 
-            // 反射光线原点
+
+
+
+            // 新的反射光线原点
+            // 新的反射光线的原点不设置为原来交点的原因：
+            //       为了避免光线与自身相交，需要将起始点稍微偏移离开交点。
+            //   反射方向和法线方向点积 < 0 : 交点在物体的内表面，新的反射光线的起始点向内偏移，所以 新的反射光线的原点 = 原来的交点 - N*scene.epsilon
+            //   反射方向和法线方向点积 >= 0 : 交点在物体的外表面，新的反射光线的起始点向外偏移，所以 新的反射光线的原点 = 原来的交点 + N*scene.epsilon
             Vector3f reflectionRayOrig = (dotProduct(reflectionDirection, N) < 0) ? hitPoint - N * scene.epsilon : hitPoint + N * scene.epsilon;
 
             // 折射光线原点
@@ -204,7 +228,7 @@ Vector3f castRay(
             // 递归调用得到折射的颜色
             Vector3f refractionColor = castRay(refractionRayOrig, refractionDirection, scene, depth + 1);
 
-            // 计算发射率
+            // 计算反射率
             float kr = fresnel(dir, N, payload->hit_obj->ior);
 
             // 反射颜色和折射颜色加权
@@ -225,7 +249,7 @@ Vector3f castRay(
             hitColor = castRay(reflectionRayOrig, reflectionDirection, scene, depth + 1) * kr;
             break;
         }
-        default: // 漫反射+高光（Phong illumation模型）
+        default: // Phong illumation模型
         {
             // [comment]
             // We use the Phong illumation model int the default case. The phong model
@@ -235,6 +259,7 @@ Vector3f castRay(
 
             // 阴影点
             Vector3f shadowPointOrig = (dotProduct(dir, N) < 0) ? hitPoint + N * scene.epsilon : hitPoint - N * scene.epsilon;
+
             // [comment]
             // Loop over all lights in the scene and sum their contribution up
             // We also apply the lambert cosine law
@@ -249,10 +274,13 @@ Vector3f castRay(
                 lightDir = normalize(lightDir);
 
                 float LdotN = std::max(0.f, dotProduct(lightDir, N));
-                // is the point in shadow, and is the nearest occluding object closer to the object than the light itself?
-                auto shadow_res = trace(shadowPointOrig, lightDir, scene.get_objects());
 
-                // 是否在阴影中
+                // is the point in shadow, and is the nearest occluding object closer to the object than the light itself?
+
+                //从shadowPointOrig向光源方向发射射线，找交点
+                auto shadow_res = trace(shadowPointOrig, lightDir, scene.get_objects());
+                
+                // inShadow  true:光线无法直接照到当前hitPoint位置  false:光线可以直接照到当前hitPoint位置
                 bool inShadow = shadow_res && (shadow_res->tNear * shadow_res->tNear < lightDistance2);
 
                 //环境光
