@@ -249,7 +249,7 @@ Vector3f castRay(
             hitColor = castRay(reflectionRayOrig, reflectionDirection, scene, depth + 1) * kr;
             break;
         }
-        default: // Phong illumation模型
+        default: // 物体材质： 既不能发射也不能折射   Phong illumation模型
         {
             // [comment]
             // We use the Phong illumation model int the default case. The phong model
@@ -271,6 +271,7 @@ Vector3f castRay(
 
                 // square of the distance between hitPoint and the light
                 float lightDistance2 = dotProduct(lightDir, lightDir);
+                
                 lightDir = normalize(lightDir);
 
                 float LdotN = std::max(0.f, dotProduct(lightDir, N));
@@ -287,6 +288,7 @@ Vector3f castRay(
                 lightAmt += inShadow ? 0 : light->intensity * LdotN;
 
                 Vector3f reflectionDirection = reflect(-lightDir, N);
+
                 // 高光颜色
                 specularColor += powf(std::max(0.f, -dotProduct(reflectionDirection, dir)),
                                       payload->hit_obj->specularExponent) *
